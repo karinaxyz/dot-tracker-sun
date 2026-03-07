@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>365 Day Tracker — Sunrise</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-color: #110a10;
+      --text-color: #dbbddc;
+      --text-muted: rgba(219, 189, 220, 0.6);
+    }
+
+    body {
+      font-family: 'Quicksand', sans-serif;
+      background-color: var(--bg-color);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .tracker-container {
+      width: 100%;
+      max-width: 420px;
+      padding: 12px 24px;
+    }
+
+    .dot-grid {
+      display: grid;
+      grid-template-columns: repeat(19, 1fr);
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .dot {
+      aspect-ratio: 1;
+      border-radius: 50%;
+      position: relative;
+      overflow: hidden;
+      filter: url(#watercolor);
+    }
+
+    /* Organic size and shape variations */
+    .dot:nth-child(3n) { transform: scale(0.92) rotate(5deg); }
+    .dot:nth-child(5n+1) { transform: scale(1.05) rotate(-3deg); }
+    .dot:nth-child(7n+2) { transform: scale(0.97) rotate(8deg); }
+    .dot:nth-child(11n+3) { transform: scale(1.03) rotate(-6deg); }
+    .dot:nth-child(13n+5) { transform: scale(0.94) rotate(4deg); }
+
+    /* Today's living dot */
+    .dot.today {
+      overflow: hidden;
+      position: relative;
+      z-index: 2;
+    }
+
+    .dot.today .sun-fill {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      border-radius: 50%;
+      transition: height 0.8s ease, background 0.8s ease;
+    }
+
+    .dot.today .glow {
+      position: absolute;
+      inset: -40%;
+      border-radius: 50%;
+      pointer-events: none;
+      transition: opacity 0.8s ease, background 0.8s ease;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 0.6; }
+      50% { transform: scale(1.15); opacity: 0.3; }
+    }
+
+    .dot.today .glow {
+      animation: pulse 4s ease-in-out infinite;
+    }
+
+    .progress-text {
+      text-align: center;
+      color: var(--text-color);
+      font-family: 'Quicksand', sans-serif;
+      font-weight: 500;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      opacity: 0.85;
+      margin-bottom: 4px;
+    }
+
+    .progress-text.time-label {
+      font-size: 14px;
+      letter-spacing: 2px;
+      text-transform: lowercase;
+      opacity: 0.95;
+      margin-bottom: 2px;
+    }
+
+    .day-progress-text {
+      margin-bottom: 18px;
+    }
+
+    .year-stats {
+      margin-top: 2px;
+    }
+
+    @media (max-width: 400px) {
+      .dot-grid {
+        grid-template-columns: repeat(15, 1fr);
+        gap: 4px;
+      }
+
+      .tracker-container {
+        padding: 16px;
+      }
+
+      .progress-text {
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- SVG filter for watercolor effect -->
+  <svg style="position: absolute; width: 0; height: 0;">
+    <defs>
+      <filter id="watercolor" x="-20%" y="-20%" width="140%" height="140%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" result="noise" seed="5"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.5" xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+    </defs>
+  </svg>
+
+  <div class="tracker-container">
+    <p class="progress-text time-label" id="timeLabel"></p>
+    <p class="progress-text day-progress-text" id="dayProgress"></p>
+    <div class="dot-grid" id="dotGrid"></div>
+    <p class="progress-text year-stats" id="percentageText"></p>
+    <p class="progress-text" id="weekText"></p>
+  </div>
+
+  <script>
+    // === Sunset gradient palette ===
+    // Each dot's position (1-365) maps to a color in this gradient.
+    // When all dots are filled, the grid is a sunset painting.
+    const sunsetStops = [
+      { at: 0.00, r: 153, g: 165, b: 205 },  // Bright Bluebell — cool sky
+      { at: 0.15, r: 170, g: 160, b: 210 },  // blue-violet transition
+      { at: 0.28, r: 219, g: 189, b: 220 },  // Faded Violet — soft clouds
+      { at: 0.40, r: 230, g: 170, b: 190 },  // soft rose/pink
+      { at: 0.52, r: 244, g: 114, b: 88  },  // Peach Echo — the sun
+      { at: 0.62, r: 245, g: 175, b: 90  },  // warm golden amber
+      { at: 0.72, r: 240, g: 140, b: 85  },  // deep coral
+      { at: 0.82, r: 140, g: 50,  b: 50  },  // warm dark red
+      { at: 0.90, r: 69,  g: 22,  b: 22  },  // English Breakfast — deep
+      { at: 1.00, r: 32,  g: 8,   b: 8   },  // Burnt Toast — darkest
+    ];
+
+    function interpolateGradient(stops, t) {
+      t = Math.max(0, Math.min(1, t));
+      let lower = stops[0], upper = stops[stops.length - 1];
+      for (let i = 0; i < stops.length - 1; i++) {
+        if (t >= stops[i].at && t <= stops[i + 1].at) {
+          lower = stops[i];
+          upper = stops[i + 1];
+          break;
+        }
+      }
+      const range = upper.at - lower.at;
+      const p = range === 0 ? 0 : (t - lower.at) / range;
+      const smooth = p * p * (3 - 2 * p);
+      return {
+        r: Math.round(lower.r + (upper.r - lower.r) * smooth),
+        g: Math.round(lower.g + (upper.g - lower.g) * smooth),
+        b: Math.round(lower.b + (upper.b - lower.b) * smooth),
+      };
+    }
+
+    function getDotColor(dayIndex, totalDays) {
+      const t = (dayIndex - 1) / (totalDays - 1);
+      return interpolateGradient(sunsetStops, t);
+    }
+
+    // === Time-of-day sky colors (for today's living dot) ===
+    // Uses the same palette feel but mapped to time
+    const skyStops = [
+      { at: 0.00, r: 32,  g: 8,   b: 20  },  // midnight — deep dark
+      { at: 0.20, r: 69,  g: 22,  b: 40  },  // pre-dawn
+      { at: 0.25, r: 219, g: 130, b: 150 },  // dawn — rose/pink
+      { at: 0.30, r: 244, g: 150, b: 100 },  // early morning — peach
+      { at: 0.38, r: 245, g: 190, b: 110 },  // morning — warm gold
+      { at: 0.50, r: 250, g: 210, b: 130 },  // noon — bright golden
+      { at: 0.62, r: 245, g: 175, b: 90  },  // afternoon — amber
+      { at: 0.72, r: 244, g: 114, b: 88  },  // late afternoon — peach echo
+      { at: 0.78, r: 200, g: 80,  b: 70  },  // sunset — deep coral
+      { at: 0.83, r: 140, g: 60,  b: 90  },  // dusk — violet
+      { at: 0.90, r: 100, g: 50,  b: 100 },  // twilight — deep purple
+      { at: 0.95, r: 50,  g: 20,  b: 40  },  // night
+      { at: 1.00, r: 32,  g: 8,   b: 20  },  // midnight
+    ];
+
+    function getSkyColor(progress) {
+      const c = interpolateGradient(skyStops, progress);
+      c.css = `rgb(${c.r}, ${c.g}, ${c.b})`;
+      return c;
+    }
+
+    function getDayOfYear() {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), 0, 0);
+      return Math.floor((now - start) / (1000 * 60 * 60 * 24));
+    }
+
+    function getWeekOfYear() {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), 0, 1);
+      const days = Math.floor((now - start) / (24 * 60 * 60 * 1000));
+      return Math.ceil((days + start.getDay() + 1) / 7);
+    }
+
+    function isLeapYear() {
+      const year = new Date().getFullYear();
+      return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+    }
+
+    function getDayProgress() {
+      const now = new Date();
+      return (now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds()) / 86400;
+    }
+
+    function getFillHeight(progress) {
+      if (progress <= 0.5) {
+        const t = progress / 0.5;
+        return 0.08 + 0.92 * Math.sin(t * Math.PI / 2);
+      }
+      return 1.0;
+    }
+
+    function getGlowIntensity(progress) {
+      const dawn = Math.exp(-Math.pow((progress - 0.27) / 0.04, 2));
+      const sunset = Math.exp(-Math.pow((progress - 0.78) / 0.04, 2));
+      const daytime = progress > 0.25 && progress < 0.80
+        ? 0.25 * Math.sin((progress - 0.25) / 0.55 * Math.PI)
+        : 0;
+      return Math.min(1, dawn * 0.8 + sunset * 0.8 + daytime);
+    }
+
+    function getTimeLabel(progress) {
+      const hour = Math.floor(progress * 24);
+      if (hour < 5) return 'night';
+      if (hour < 7) return 'dawn';
+      if (hour < 10) return 'morning';
+      if (hour < 14) return 'midday';
+      if (hour < 17) return 'afternoon';
+      if (hour < 19) return 'sunset';
+      if (hour < 21) return 'dusk';
+      return 'night';
+    }
+
+    let todayDot = null;
+
+    function initTracker() {
+      const totalDays = isLeapYear() ? 366 : 365;
+      const currentDay = getDayOfYear();
+      const currentWeek = getWeekOfYear();
+      const percentage = Math.round((currentDay / totalDays) * 100);
+      const grid = document.getElementById('dotGrid');
+
+      const ombreRange = 25;
+
+      for (let i = 1; i <= totalDays; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'dot';
+
+        const color = getDotColor(i, totalDays);
+
+        if (i < currentDay) {
+          // Filled: show the sunset gradient color
+          dot.style.backgroundColor = `rgb(${color.r}, ${color.g}, ${color.b})`;
+
+          // Ombre: dots near today get slightly softer
+          const daysFromToday = currentDay - i;
+          if (daysFromToday <= ombreRange) {
+            const fade = daysFromToday / ombreRange;
+            const eased = fade * fade;
+            dot.style.opacity = 0.55 + 0.45 * eased;
+          } else {
+            // Watercolor opacity variations
+            const idx = i % 13;
+            const opacities = [0.88, 0.82, 0.95, 0.78, 0.90, 0.85, 0.93, 0.80, 0.87, 0.92, 0.84, 0.96, 0.83];
+            dot.style.opacity = opacities[idx];
+          }
+
+        } else if (i === currentDay) {
+          dot.classList.add('today');
+          // Base color is the ghost of its gradient position
+          dot.style.backgroundColor = `rgba(${color.r}, ${color.g}, ${color.b}, 0.15)`;
+
+          const fill = document.createElement('div');
+          fill.className = 'sun-fill';
+          dot.appendChild(fill);
+
+          const glow = document.createElement('div');
+          glow.className = 'glow';
+          dot.appendChild(glow);
+
+          todayDot = dot;
+
+        } else {
+          // Unfilled: faint ghost of the sunset color it will become
+          dot.style.backgroundColor = `rgba(${color.r}, ${color.g}, ${color.b}, 0.12)`;
+
+          // Ombre: future dots near today are slightly more visible
+          const daysFromToday = i - currentDay;
+          if (daysFromToday <= ombreRange) {
+            const fade = daysFromToday / ombreRange;
+            const eased = fade * fade;
+            const alpha = 0.22 - 0.10 * eased;
+            dot.style.backgroundColor = `rgba(${color.r}, ${color.g}, ${color.b}, ${alpha})`;
+          }
+        }
+
+        grid.appendChild(dot);
+      }
+
+      document.getElementById('percentageText').textContent = `${percentage}% through the year`;
+      document.getElementById('weekText').textContent = `Week ${currentWeek} of 52`;
+
+      updateTodayDot();
+    }
+
+    function updateTodayDot() {
+      if (!todayDot) return;
+
+      const progress = getDayProgress();
+      const color = getSkyColor(progress);
+      const fillHeight = getFillHeight(progress);
+      const glowIntensity = getGlowIntensity(progress);
+      const timeLabel = getTimeLabel(progress);
+
+      const fill = todayDot.querySelector('.sun-fill');
+      const glow = todayDot.querySelector('.glow');
+
+      fill.style.height = `${fillHeight * 100}%`;
+      fill.style.background = color.css;
+
+      const glowAlpha = glowIntensity * 0.5;
+      glow.style.background = `radial-gradient(circle, rgba(${color.r}, ${color.g}, ${color.b}, ${glowAlpha}) 0%, transparent 70%)`;
+      glow.style.opacity = glowIntensity > 0.05 ? '1' : '0';
+
+      const dayPercent = Math.round(progress * 100);
+      document.getElementById('timeLabel').textContent = timeLabel;
+      document.getElementById('dayProgress').textContent = `${dayPercent}% through today`;
+    }
+
+    initTracker();
+    setInterval(updateTodayDot, 30000);
+  </script>
+</body>
+</html>
