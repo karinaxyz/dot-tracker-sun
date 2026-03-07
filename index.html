@@ -15,9 +15,15 @@
     }
 
     :root {
-      --bg-color: #110a10;
-      --text-color: #dbbddc;
-      --text-muted: rgba(219, 189, 220, 0.6);
+      --bg-color: #ffffff;
+      --text-color: #451616;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-color: #110a10;
+        --text-color: #dbbddc;
+      }
     }
 
     body {
@@ -159,13 +165,13 @@
     // Each dot's position (1-365) maps to a color in this gradient.
     // When all dots are filled, the grid is a sunset painting.
     const sunsetStops = [
-      { at: 0.00, r: 153, g: 165, b: 205 },  // Bright Bluebell — cool sky
-      { at: 0.15, r: 170, g: 160, b: 210 },  // blue-violet transition
-      { at: 0.28, r: 219, g: 189, b: 220 },  // Faded Violet — soft clouds
-      { at: 0.40, r: 230, g: 170, b: 190 },  // soft rose/pink
-      { at: 0.52, r: 244, g: 114, b: 88  },  // Peach Echo — the sun
-      { at: 0.62, r: 245, g: 175, b: 90  },  // warm golden amber
-      { at: 0.72, r: 240, g: 140, b: 85  },  // deep coral
+      { at: 0.00, r: 120, g: 130, b: 180 },  // Bright Bluebell — cool sky
+      { at: 0.15, r: 140, g: 120, b: 180 },  // blue-violet transition
+      { at: 0.28, r: 175, g: 140, b: 180 },  // Faded Violet — deeper
+      { at: 0.40, r: 200, g: 120, b: 145 },  // rose/pink — richer
+      { at: 0.52, r: 220, g: 95,  b: 72  },  // Peach Echo — the sun
+      { at: 0.62, r: 210, g: 145, b: 60  },  // warm golden amber — deeper
+      { at: 0.72, r: 205, g: 110, b: 65  },  // deep coral
       { at: 0.82, r: 140, g: 50,  b: 50  },  // warm dark red
       { at: 0.90, r: 69,  g: 22,  b: 22  },  // English Breakfast — deep
       { at: 1.00, r: 32,  g: 8,   b: 8   },  // Burnt Toast — darkest
@@ -219,6 +225,7 @@
       c.css = `rgb(${c.r}, ${c.g}, ${c.b})`;
       return c;
     }
+
 
     function getDayOfYear() {
       const now = new Date();
@@ -322,16 +329,20 @@
           todayDot = dot;
 
         } else {
-          // Unfilled: faint ghost of the sunset color it will become
-          dot.style.backgroundColor = `rgba(${color.r}, ${color.g}, ${color.b}, 0.12)`;
+          // Unfilled: blend the dot's eventual color with a warm rose
+          // so dark end-of-year colors still look warm, not gray
+          const warmR = Math.round(color.r + (200 - color.r) * 0.6);
+          const warmG = Math.round(color.g + (140 - color.g) * 0.6);
+          const warmB = Math.round(color.b + (150 - color.b) * 0.6);
+          dot.style.backgroundColor = `rgba(${warmR}, ${warmG}, ${warmB}, 0.22)`;
 
           // Ombre: future dots near today are slightly more visible
           const daysFromToday = i - currentDay;
           if (daysFromToday <= ombreRange) {
             const fade = daysFromToday / ombreRange;
             const eased = fade * fade;
-            const alpha = 0.22 - 0.10 * eased;
-            dot.style.backgroundColor = `rgba(${color.r}, ${color.g}, ${color.b}, ${alpha})`;
+            const alpha = 0.32 - 0.10 * eased;
+            dot.style.backgroundColor = `rgba(${warmR}, ${warmG}, ${warmB}, ${alpha})`;
           }
         }
 
