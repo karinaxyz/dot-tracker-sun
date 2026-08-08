@@ -27,6 +27,7 @@ for (const mode of ['day', 'night']) {
     assert.equal(result.statusCode, 200);
     assert.equal(result.headers['content-type'], 'image/png');
     assert.equal(result.headers['x-content-type-options'], 'nosniff');
+    assert.equal(result.headers['cache-control'], 'public, max-age=0, s-maxage=86400, stale-while-revalidate=60');
     assert.ok(Buffer.isBuffer(result.body));
     assert.equal(result.body.subarray(1, 4).toString(), 'PNG');
     const metadata = await sharp(result.body).metadata();

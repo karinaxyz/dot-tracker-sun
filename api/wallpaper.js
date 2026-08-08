@@ -15,7 +15,7 @@ module.exports = async function wallpaperEndpoint(request, response) {
     response.statusCode = 200;
     response.setHeader('Content-Type', 'image/png');
     response.setHeader('Content-Length', String(png.length));
-    response.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=31536000, immutable');
+    response.setHeader('Cache-Control', 'public, max-age=0, s-maxage=86400, stale-while-revalidate=60');
     response.setHeader('X-Content-Type-Options', 'nosniff');
     response.end(png);
   } catch (error) {
