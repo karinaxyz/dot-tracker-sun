@@ -13,8 +13,6 @@
     "test": "node --test wallpaper/tests/*.test.js"
   },
   "dependencies": {
-    "@fontsource/quicksand": "5.2.8",
-    "opentype.js": "1.3.4",
     "sharp": "^0.34.3"
   }
 }

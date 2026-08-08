@@ -6,7 +6,7 @@ const path = require('node:path');
 const sharp = require('sharp');
 const { CANVAS, LAYOUT, TYPOGRAPHY, THEMES, SUNSET_STOPS } = require('../config');
 const { getDateState } = require('../calendar/date-state');
-const { textPathData } = require('./text-path');
+const { textPaths } = require('./text-path');
 
 function interpolateGradient(stops, value) {
   const t = Math.max(0, Math.min(1, value));
@@ -88,12 +88,12 @@ function generateWallpaperSvg({ date, mode }) {
 
   const percentageLabel = `${state.percentage}% through the year`;
   const yearLabel = String(state.year);
-  const percentagePath = textPathData(percentageLabel, {
+  const percentagePaths = textPaths(percentageLabel, {
     centerX: LAYOUT.gridCenterX,
     baselineY: LAYOUT.metadata.percentageY,
     fontSize: TYPOGRAPHY.metadataSize,
   });
-  const yearPath = textPathData(yearLabel, {
+  const yearPaths = textPaths(yearLabel, {
     centerX: LAYOUT.gridCenterX,
     baselineY: LAYOUT.metadata.yearY,
     fontSize: TYPOGRAPHY.yearSize,
@@ -105,8 +105,8 @@ function generateWallpaperSvg({ date, mode }) {
     `<rect width="100%" height="100%" fill="${theme.background}"/>`,
     `<g id="dot-grid">${dots.join('')}</g>`,
     `<g id="metadata" fill="${theme.text}">`,
-    `<path class="percentage-label" data-label="${escapeXml(percentageLabel)}" d="${percentagePath}" opacity="0.86"/>`,
-    `<path class="year-label" data-label="${yearLabel}" d="${yearPath}" opacity="0.9"/>`,
+    `<g class="percentage-label" data-label="${escapeXml(percentageLabel)}" opacity="0.86">${percentagePaths}</g>`,
+    `<g class="year-label" data-label="${yearLabel}" opacity="0.9">${yearPaths}</g>`,
     '</g>',
     `<metadata>${escapeXml(JSON.stringify({ ...state, mode }))}</metadata>`,
     '</svg>',
