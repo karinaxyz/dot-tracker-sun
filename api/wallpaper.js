@@ -1,0 +1,30 @@
+'use strict';
+
+const { renderWallpaperBuffer } = require('../wallpaper/render/render-wallpaper');
+
+function firstQueryValue(value) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+module.exports = async function wallpaperEndpoint(request, response) {
+  try {
+    const date = firstQueryValue(request.query?.date);
+    const mode = firstQueryValue(request.query?.mode);
+    const png = await renderWallpaperBuffer({ date, mode });
+
+    response.statusCode = 200;
+    response.setHeader('Content-Type', 'image/png');
+    response.setHeader('Content-Length', String(png.length));
+    response.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=31536000, immutable');
+    response.setHeader('X-Content-Type-Options', 'nosniff');
+    response.end(png);
+  } catch (error) {
+    response.statusCode = 400;
+    response.setHeader('Content-Type', 'application/json; charset=utf-8');
+    response.setHeader('Cache-Control', 'no-store');
+    response.end(JSON.stringify({
+      error: error.message,
+      usage: '/api/wallpaper?date=YYYY-MM-DD&mode=day|night',
+    }));
+  }
+};

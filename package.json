@@ -1,0 +1,18 @@
+{
+  "name": "living-year-wallpaper",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Prototype renderer for the Living Year iPhone wallpaper",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "render": "node wallpaper/render/render-wallpaper.js",
+    "preview": "node wallpaper/preview/generate-previews.js",
+    "test": "node --test wallpaper/tests/*.test.js"
+  },
+  "dependencies": {
+    "sharp": "^0.34.3"
+  }
+}
