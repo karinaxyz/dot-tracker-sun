@@ -6,6 +6,7 @@ const path = require('node:path');
 const sharp = require('sharp');
 const { CANVAS, LAYOUT, TYPOGRAPHY, THEMES, SUNSET_STOPS } = require('../config');
 const { getDateState } = require('../calendar/date-state');
+const { textPathData } = require('./text-path');
 
 function interpolateGradient(stops, value) {
   const t = Math.max(0, Math.min(1, value));
@@ -85,16 +86,27 @@ function generateWallpaperSvg({ date, mode }) {
     }
   }
 
-  const textStyle = `font-family:${TYPOGRAPHY.family};font-weight:${TYPOGRAPHY.metadataWeight}`;
-  const yearStyle = `font-family:${TYPOGRAPHY.family};font-weight:${TYPOGRAPHY.yearWeight}`;
+  const percentageLabel = `${state.percentage}% through the year`;
+  const yearLabel = String(state.year);
+  const percentagePath = textPathData(percentageLabel, {
+    centerX: LAYOUT.gridCenterX,
+    baselineY: LAYOUT.metadata.percentageY,
+    fontSize: TYPOGRAPHY.metadataSize,
+  });
+  const yearPath = textPathData(yearLabel, {
+    centerX: LAYOUT.gridCenterX,
+    baselineY: LAYOUT.metadata.yearY,
+    fontSize: TYPOGRAPHY.yearSize,
+    letterSpacing: TYPOGRAPHY.yearLetterSpacing,
+  });
 
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" width="${CANVAS.width}" height="${CANVAS.height}" viewBox="0 0 ${CANVAS.width} ${CANVAS.height}">`,
     `<rect width="100%" height="100%" fill="${theme.background}"/>`,
     `<g id="dot-grid">${dots.join('')}</g>`,
-    `<g id="metadata" text-anchor="middle" fill="${theme.text}">`,
-    `<text x="${LAYOUT.gridCenterX}" y="${LAYOUT.metadata.percentageY}" style="${textStyle}" font-size="${TYPOGRAPHY.metadataSize}" opacity="0.86">${state.percentage}% through the year</text>`,
-    `<text x="${LAYOUT.gridCenterX}" y="${LAYOUT.metadata.yearY}" style="${yearStyle}" font-size="${TYPOGRAPHY.yearSize}" letter-spacing="${TYPOGRAPHY.yearLetterSpacing}" opacity="0.9">${state.year}</text>`,
+    `<g id="metadata" fill="${theme.text}">`,
+    `<path class="percentage-label" data-label="${escapeXml(percentageLabel)}" d="${percentagePath}" opacity="0.86"/>`,
+    `<path class="year-label" data-label="${yearLabel}" d="${yearPath}" opacity="0.9"/>`,
     '</g>',
     `<metadata>${escapeXml(JSON.stringify({ ...state, mode }))}</metadata>`,
     '</svg>',

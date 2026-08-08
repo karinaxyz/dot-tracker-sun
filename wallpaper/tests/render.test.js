@@ -14,8 +14,10 @@ test('each mode contains exactly 365 dot circles and one today ring', () => {
     assert.equal((svg.match(/class="dot /g) || []).length, 365);
     assert.equal((svg.match(/class="today-ring"/g) || []).length, 1);
     assert.doesNotMatch(svg, /Week .* of 52/);
-    assert.match(svg, /60% through the year/);
-    assert.ok(svg.indexOf('60% through the year') < svg.indexOf('>2026<'));
+    assert.match(svg, /data-label="60% through the year"/);
+    assert.match(svg, /data-label="2026"/);
+    assert.ok(svg.indexOf('data-label="60% through the year"') < svg.indexOf('data-label="2026"'));
+    assert.doesNotMatch(svg, /<text/);
     assert.ok(svg.indexOf('class="dot filled" data-day="220"') < svg.indexOf('class="today-ring"'));
   }
 });
