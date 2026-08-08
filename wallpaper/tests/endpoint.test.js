@@ -47,3 +47,11 @@ test('endpoint rejects invalid dates and modes without returning HTML', async ()
     assert.equal(result.headers['content-type'], 'application/json; charset=utf-8');
   }
 });
+
+test('endpoint accepts human-friendly capitalization from Shortcuts menus', async () => {
+  for (const mode of ['Day', ' NIGHT ']) {
+    const result = await invoke({ date: '2026-08-08', mode });
+    assert.equal(result.statusCode, 200);
+    assert.equal(result.headers['content-type'], 'image/png');
+  }
+});

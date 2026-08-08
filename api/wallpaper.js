@@ -9,7 +9,8 @@ function firstQueryValue(value) {
 module.exports = async function wallpaperEndpoint(request, response) {
   try {
     const date = firstQueryValue(request.query?.date);
-    const mode = firstQueryValue(request.query?.mode);
+    const rawMode = firstQueryValue(request.query?.mode);
+    const mode = typeof rawMode === 'string' ? rawMode.trim().toLowerCase() : rawMode;
     const png = await renderWallpaperBuffer({ date, mode });
 
     response.statusCode = 200;
